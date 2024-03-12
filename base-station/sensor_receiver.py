@@ -5,7 +5,7 @@ import cv2 as cv
 import json
 
 parser = argparse.ArgumentParser(
-    prog='RabbitMQ Receiver for Jetson',
+    prog='RabbitMQ Receiver for Jetson sensor data',
     description='Receives data from SiamiLab JetsonTX2'
 )
 parser.add_argument('ip')
@@ -17,7 +17,7 @@ def main(args):
     connection = pika.BlockingConnection(conn_params)
     channel = connection.channel()
 
-    channel.queue_declare(queue='hello')
+    channel.queue_declare(queue='thermo-camera')
 
     def callback(ch, method, properties, body):
         data = json.loads(body)
@@ -30,7 +30,7 @@ def main(args):
         cv.imshow('Temps', img)
         cv.waitKey(50)
 
-    channel.basic_consume(queue='hello', on_message_callback=callback, auto_ack=True)
+    channel.basic_consume(queue='thermo-camera', on_message_callback=callback, auto_ack=True)
 
     print(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()

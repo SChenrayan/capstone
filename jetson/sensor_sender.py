@@ -11,7 +11,7 @@ connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
-channel.queue_declare(queue='hello')
+channel.queue_declare(queue='sensor-data')
 
 # Create sensor object, using the board's default I2C bus.
 i2c = board.I2C()  # uses board.SCL and board.SDA
@@ -42,5 +42,5 @@ while True:
    	'pressure': pressure,
    	'altitude': altitude,
     }
-    channel.basic_publish(exchange='', routing_key='hello', body=json.dumps(body_dict))
+    channel.basic_publish(exchange='', routing_key='sensor-data', body=json.dumps(body_dict))
     time.sleep(2)
