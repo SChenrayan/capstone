@@ -75,7 +75,7 @@ class Joystick:
 
     def _consume_event(self, event):
         if event.code == "SYN_REPORT":
-            self._channel.basic_publish(exchange="", routing_key="joy_state", body='i')
+            self._channel.basic_publish(exchange="", routing_key="joy_state", body=self.data())
             print(f"Published {self.data()}")
         elif event.code == "ABS_X":
             state = event.state if abs(event.state) > 130 else 0
