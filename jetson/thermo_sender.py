@@ -60,7 +60,7 @@ try:
                 
         channel.basic_publish(
             exchange='',
-            routing_key='hello',
+            routing_key='thermo-camera',
             body=json.dumps(data),
         )
         print(count)
