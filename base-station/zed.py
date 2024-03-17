@@ -199,8 +199,7 @@ class ZedCamera:
                 self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
                 tracking_state = self._zed.get_position(self._position)
                 mapping_state = self._zed.get_spatial_mapping_state()
-                print(f"POSITIONAL STATUS: {tracking_state}")
-                print(f"MAPPING STATUS: {mapping_state}")
+                print(f"POSITIONAL STATUS: {tracking_state}\tMAPPING STATUS: {mapping_state}")
 
                 if self._mapping_active:
                     duration = time.time() - self._last_call
