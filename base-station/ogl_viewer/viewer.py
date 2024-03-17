@@ -207,7 +207,6 @@ class GLViewer:
         self.new_chunks = False
         self.chunks_pushed = False
         self.change_state = False
-        self.add_marker = False
         self.projection = sl.Matrix4f()
         self.projection.set_identity()
         self.znear = 0.5
@@ -333,9 +332,7 @@ class GLViewer:
         self.mutex.release()
         copy_state = self.change_state
         self.change_state = False
-        copy_marker = self.add_marker
-        self.add_marker = False
-        return copy_state, copy_marker
+        return copy_state
 
     def idle(self):
         if self.available:
@@ -356,8 +353,6 @@ class GLViewer:
             self.close_func()
         if ord(key) == 32:                     # space bar
             self.change_state = True
-        if ord(key) == 109:                    # 'm' key
-            self.add_marker = True
 
     def draw_callback(self):
         if self.available:
