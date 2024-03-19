@@ -13,6 +13,18 @@ class Viewer:
         colored_temps = cv.applyColorMap(temps, cv.COLORMAP_JET)
         colored_temps = cv.resize(colored_temps, (640, 480), interpolation = cv.INTER_CUBIC)
         colored_temps = cv.flip(colored_temps, 1)
+        hsv = cv.cvtColor(colored_temps, cv.COLOR_BGR2HSV)
+        lower_red = np.array([0, 10, 120])
+        upper_red = np.array([16, 255, 255])
+        hot_obj = cv.inRange (hsv, lower_red, upper_red)
+        contours, _ = cv.findContours(hot_obj.copy(),
+                                                  cv.RETR_TREE,
+                                                  cv.CHAIN_APPROX_SIMPLE)
+        if len(contours) > 0:
+                    red_area = max(contours, key=cv.contourArea)
+                    x, y, w, h = cv.boundingRect(red_area)
+                    cv.rectangle(colored_temps,(x, y),(x+w, y+h),(255, 0, 0), 2)
+                    cv.putText(colored_temps, 'Hot!', (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.9, (255,0,0), 2)
 
         self.img[0:480, 0:640] = colored_temps
         self.update_img()
