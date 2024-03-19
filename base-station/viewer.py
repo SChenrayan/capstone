@@ -18,8 +18,8 @@ class Viewer:
         upper_red = np.array([16, 255, 255])
         hot_obj = cv.inRange (hsv, lower_red, upper_red)
         contours, _ = cv.findContours(hot_obj.copy(),
-                                                  cv.RETR_TREE,
-                                                  cv.CHAIN_APPROX_SIMPLE)
+                                      cv.RETR_TREE,
+                                      cv.CHAIN_APPROX_SIMPLE)
         if len(contours) > 0:
                     red_area = max(contours, key=cv.contourArea)
                     x, y, w, h = cv.boundingRect(red_area)
