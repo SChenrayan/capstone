@@ -148,10 +148,9 @@ class ZedCamera:
             print("Camera Open : " + repr(status) + ". Exit program.")
             raise RuntimeError(f"Error opening ZED camera with IP: {ip}:{port}")
 
-        self._positional_tracking_parameters = sl.PositionalTrackingParameters(
-            set_floor_as_origin=True,
-            enable_imu_fusion=False,
-        )
+        self._positional_tracking_parameters = sl.PositionalTrackingParameters
+        self._positional_tracking_parameters.set_floor_as_origin = True
+        self._positional_tracking_parameters.enable_imu_fusion = False
 
         returned_state = self._zed.enable_positional_tracking(self._positional_tracking_parameters)
         if returned_state != sl.ERROR_CODE.SUCCESS:
