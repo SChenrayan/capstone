@@ -20,11 +20,11 @@ class Viewer:
         contours, _ = cv.findContours(hot_obj.copy(),
                                       cv.RETR_TREE,
                                       cv.CHAIN_APPROX_SIMPLE)
-        if len(contours) > 0:
-                    red_area = max(contours, key=cv.contourArea)
-                    x, y, w, h = cv.boundingRect(red_area)
-                    cv.rectangle(colored_temps,(x, y),(x+w, y+h),(255, 0, 0), 2)
-                    cv.putText(colored_temps, 'Hot!', (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.9, (255,0,0), 2)
+        for c in contours:
+            x, y, w, h = cv.boundingRect(c)
+            if w > 80  and w < 400 and h > 80:
+                cv.rectangle(colored_temps,(x, y),(x+w, y+h),(255, 0, 0), 2)
+                cv.putText(colored_temps, 'Hot!', (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.9, (255,0,0), 2)
 
         self.img[0:480, 0:640] = colored_temps
         self.update_img()
