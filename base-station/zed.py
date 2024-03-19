@@ -7,7 +7,7 @@ import ogl_viewer.viewer as gl
 
 def main(ip, port):
     init = sl.InitParameters()
-    init.depth_mode = sl.DEPTH_MODE.NEURAL
+    init.depth_mode = sl.DEPTH_MODE.QUALITY
     init.coordinate_units = sl.UNIT.METER
     init.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP  # OpenGL's coordinate system is right_handed
     init.camera_resolution = sl.RESOLUTION.HD720
@@ -137,18 +137,21 @@ def main(ip, port):
 class ZedCamera:
     def __init__(self, ip, port):
         init = sl.InitParameters()
-        init.depth_mode = sl.DEPTH_MODE.NEURAL
+        init.depth_mode = sl.DEPTH_MODE.QUALITY
         init.coordinate_units = sl.UNIT.METER
         init.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP  # OpenGL's coordinate system is right_handed
         init.camera_resolution = sl.RESOLUTION.HD720
         init.set_from_stream(ip, port)
+        print(f"-------------- Opening camera on address: {ip}:{port}")
         self._zed = sl.Camera()
         status = self._zed.open(init)
         if status != sl.ERROR_CODE.SUCCESS:
             print("Camera Open : " + repr(status) + ". Exit program.")
             raise RuntimeError(f"Error opening ZED camera with IP: {ip}:{port}")
+    
+        print(f"-------------- Opened camera")
 
-        self._positional_tracking_parameters = sl.PositionalTrackingParameters
+        self._positional_tracking_parameters = sl.PositionalTrackingParameters()
         self._positional_tracking_parameters.set_floor_as_origin = True
         self._positional_tracking_parameters.enable_imu_fusion = False
 
@@ -156,6 +159,8 @@ class ZedCamera:
         if returned_state != sl.ERROR_CODE.SUCCESS:
             print("Enable Positional Tracking Failed : " + repr(returned_state) + ". Exit program.")
             exit()
+
+        print("-------------- Enabled positional tracking")
 
         self._runtime_parameters = sl.RuntimeParameters()
         self._runtime_parameters.confidence_threshold = 50
@@ -188,14 +193,21 @@ class ZedCamera:
         init_position = sl.Transform()
         self._zed.reset_positional_tracking(init_position)
         self._viewer.init(self._zed.get_camera_information().camera_configuration.calibration_parameters.left_cam, self._pymesh, 1)
+        print("-------------- Initialized view")
 
     def grab(self):
-        if not self._running or not self._viewer.is_available():
+        print("-------------- in grab")
+        available = self._viewer.is_available()
+        if not self._running or not available:
+            print(f"-------------- Unable to grab, running = {self.running}, available = {available}")
             return False
         grab = self._zed.grab(self._runtime_parameters)
+        print(f"-------------- grab = {grab}")
         if grab == sl.ERROR_CODE.SUCCESS:
             self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
+            print(f"-------------- Retrieved image")
             tracking_state = self._zed.get_position(self._position)
+            print(f"-------------- Tracking state = {tracking_state}")
 
             if self._mapping_active:
                 mapping_state = self._zed.get_spatial_mapping_state()
@@ -262,7 +274,7 @@ def temp_thread(zed: ZedCamera):
 
 
 if __name__ == "__main__":
-    zed = ZedCamera("10.110.241.23", 8002)
+    zed = ZedCamera("10.110.241.132", 8002)
     thread = threading.Thread(target=temp_thread, args=(zed,))
     thread.daemon = True
     thread.start()
