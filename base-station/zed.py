@@ -202,12 +202,14 @@ class ZedCamera:
         if not self._running or not available:
             print(f"-------------- Unable to grab, running = {self.running}, available = {available}")
             return False
+        print("here")
         grab = self._zed.grab(self._runtime_parameters)
+        print("here2")
         if grab == sl.ERROR_CODE.SUCCESS:
             self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
-            print(f"-------------- Retrieved image")
+            # print(f"-------------- Retrieved image")
             tracking_state = self._zed.get_position(self._position)
-            print(f"-------------- Tracking state = {tracking_state}")
+            # print(f"-------------- Tracking state = {tracking_state}")
 
             if self._mapping_active:
                 mapping_state = self._zed.get_spatial_mapping_state()
@@ -223,6 +225,7 @@ class ZedCamera:
                 mapping_state = sl.SPATIAL_MAPPING_STATE.NOT_ENABLED
 
             self._viewer.update_view(self._image, self._position.pose_data(), tracking_state, mapping_state)
+            print(f"------------------------ Updated view")
         else:
             print(f"Grabbing from ZED camera failed. ERROR CODE: {grab}")
         return True
@@ -248,7 +251,9 @@ class ZedCamera:
         point_cloud = sl.Mat()
         self._zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
         point = point_cloud.get_value(640, 360)
-        print(f"Point at crosshair is: {point[0]}, {point[1]}, {point[2]}")
+        # point = (SUCCESS, array([ 0.00966044, -0.32015184, -6.48294115,         nan]))
+        print(f"----- get_crosshair_position: point = {point}")
+        # print(f"Point at crosshair is: {point[0]}, {point[1]}, {point[2]}")
 
     def toggle_mapping(self):
         if not self._running:

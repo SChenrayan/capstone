@@ -1,6 +1,6 @@
-from face import Face
-from obj_file import ObjFile
-from vertex import Vertex
+from .face import Face
+from .obj_file import ObjFile
+from .vertex import Vertex
 
 
 class Cube(ObjFile):

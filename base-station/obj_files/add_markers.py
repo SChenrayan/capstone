@@ -1,8 +1,8 @@
 from typing import List
 
-from obj_examples import ExclamationPoint
-from obj_file import ObjFile
-from vertex import Vertex
+from .obj_examples import ExclamationPoint
+from .obj_file import ObjFile
+from .vertex import Vertex
 
 
 def add_markers(path: str, dangers: List[Vertex]) -> None:
