@@ -3,10 +3,11 @@ import pika
 import inputs
 import threading
 import json
+from zed import ZedCamera
 
 
 class Joystick:
-    def __init__(self):
+    def __init__(self, zed: ZedCamera):
         self.x_left = 0
         self.y_left = 0
         self.x_right = 0
@@ -32,15 +33,19 @@ class Joystick:
 
         self._monitor_thread = threading.Thread(target=self._monitor_events, args=())
         self._monitor_thread.daemon = True
-        self._monitor_thread.start()
 
         self._connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
         self._channel = self._connection.channel()
-
         self._channel.queue_declare(queue='joy_state')
+
+        self._zed = zed
 
     def __del__(self):
         self._connection.close()
+
+    def run(self):
+        self._zed.run()
+        self._monitor_thread.start()
 
     def data(self):
         """
@@ -93,10 +98,14 @@ class Joystick:
             self.bumper_left = event.state
         elif event.code == "BTN_TR":
             self.bumper_right = event.state
+            if event.state == 1:
+                self._zed.toggle_mapping()
         elif event.code == "BTN_SOUTH":
             self.a = event.state
         elif event.code == "BTN_WEST":
             self.x = event.state
+            if event.state == 1:
+                self._zed.close()
         else:
             print(f"Unknown event ({event.code}). Skipping.")
 
@@ -108,7 +117,15 @@ class Joystick:
 
 
 if __name__ == "__main__":
-    joy = Joystick()
-    while True:
-        joy.read()
-        time.sleep(0.5)
+    zed = ZedCamera("10.110.241.132", 8002)
+    print("Zed initialized")
+    time.sleep(0.3)
+    joy = Joystick(zed)
+    print("Joy initialized")
+    time.sleep(0.3)
+    joy.run()
+    print("Running joy")
+    while zed.grab():
+        time.sleep(0.05)
+        pass
+    del joy
