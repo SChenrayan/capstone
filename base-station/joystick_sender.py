@@ -119,12 +119,13 @@ class Joystick:
 if __name__ == "__main__":
     zed = ZedCamera("10.110.241.132", 8002)
     print("Zed initialized")
+    time.sleep(0.3)
     joy = Joystick(zed)
     print("Joy initialized")
+    time.sleep(0.3)
     joy.run()
     print("Running joy")
     while zed.grab():
-        print("-- in grab loop")
         time.sleep(0.05)
         pass
     del joy

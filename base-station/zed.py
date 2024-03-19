@@ -148,7 +148,7 @@ class ZedCamera:
         if status != sl.ERROR_CODE.SUCCESS:
             print("Camera Open : " + repr(status) + ". Exit program.")
             raise RuntimeError(f"Error opening ZED camera with IP: {ip}:{port}")
-    
+
         print(f"-------------- Opened camera")
 
         self._positional_tracking_parameters = sl.PositionalTrackingParameters()
@@ -196,13 +196,11 @@ class ZedCamera:
         print("-------------- Initialized view")
 
     def grab(self):
-        print("-------------- in grab")
         available = self._viewer.is_available()
         if not self._running or not available:
             print(f"-------------- Unable to grab, running = {self.running}, available = {available}")
             return False
         grab = self._zed.grab(self._runtime_parameters)
-        print(f"-------------- grab = {grab}")
         if grab == sl.ERROR_CODE.SUCCESS:
             self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
             print(f"-------------- Retrieved image")
@@ -258,6 +256,7 @@ class ZedCamera:
             self._mapping_active = False
 
     def close(self):
+        print("-------------- Closing ZED")
         self._running = False
         self._image.free(memory_type=sl.MEM.CPU)
         self._pymesh.clear()
