@@ -102,10 +102,12 @@ class Joystick:
                 self._zed.toggle_mapping()
         elif event.code == "BTN_SOUTH":
             self.a = event.state
+            if event.state == 1:
+                self._zed.add_marker()
         elif event.code == "BTN_WEST":
             self.x = event.state
             if event.state == 1:
-                self._zed.close()
+                self._zed.get_crosshair_position()
         else:
             print(f"Unknown event ({event.code}). Skipping.")
 

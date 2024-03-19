@@ -3,6 +3,8 @@ import time
 
 import pyzed.sl as sl
 import ogl_viewer.viewer as gl
+from obj_files.vertex import Vertex
+from obj_files.add_markers import add_markers
 
 
 def main(ip, port):
@@ -225,6 +227,29 @@ class ZedCamera:
             print(f"Grabbing from ZED camera failed. ERROR CODE: {grab}")
         return True
 
+    def add_marker(self):
+        if not self._mapping_active:
+            print(f"Cannot place markers while not mapping")
+            return False
+        global_position = sl.Pose()
+        state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.FRAME_WORLD)
+        if state == sl.TRACKING_STATE.OK:
+            translation = sl.Translation()
+            x = round(global_position.get_translation(translation).get()[0], 3)
+            y = round(global_position.get_translation(translation).get()[1], 3)
+            z = round(global_position.get_translation(translation).get()[2], 3)
+            self._markers.append(Vertex(x, y, z))
+            print(f"Marker added at position: {x}, {y}, {z}")
+        else:
+            print(f"Unable to place marker because tracking state is {state}")
+            return False
+
+    def get_crosshair_position(self):
+        point_cloud = sl.Mat()
+        self._zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
+        point = point_cloud.get_value(640, 360)
+        print(f"Point at crosshair is: {point[0]}, {point[1]}, {point[2]}")
+
     def toggle_mapping(self):
         if not self._running:
             raise RuntimeError("Cannot enable mapping when the viewer is not running.")
@@ -240,20 +265,26 @@ class ZedCamera:
 
             self._mapping_active = True
         else:
-            self._zed.extract_whole_spatial_map(self._pymesh)
-            filter_params = sl.MeshFilterParameters()
-            filter_params.set(sl.MESH_FILTER.MEDIUM)
-            self._pymesh.filter(filter_params, True)
-            self._viewer.clear_current_mesh()
-            self._pymesh.apply_texture(sl.MESH_TEXTURE_FORMAT.RGBA)
-
-            status = self._pymesh.save(self.FILEPATH)
-            if status:
-                print(f"Initial mesh saved under {self.FILEPATH}")
-            else:
-                print(f"Failed to save initial mesh under {self.FILEPATH}")
-
+            self.extract()
+            self._markers = []
             self._mapping_active = False
+
+    def extract(self):
+        self._zed.extract_whole_spatial_map(self._pymesh)
+        filter_params = sl.MeshFilterParameters()
+        filter_params.set(sl.MESH_FILTER.MEDIUM)
+        self._pymesh.filter(filter_params, True)
+        self._viewer.clear_current_mesh()
+        self._pymesh.apply_texture(sl.MESH_TEXTURE_FORMAT.RGBA)
+
+        status = self._pymesh.save(self.FILEPATH)
+        if status:
+            print(f"Initial mesh saved under {self.FILEPATH}")
+        else:
+            print(f"Failed to save initial mesh under {self.FILEPATH}")
+
+        add_markers(self.FILEPATH, self._markers)
+        print(f"Markers added to mesh under {self.FILEPATH}")
 
     def close(self):
         print("-------------- Closing ZED")
