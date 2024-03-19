@@ -148,13 +148,18 @@ class ZedCamera:
             print("Camera Open : " + repr(status) + ". Exit program.")
             raise RuntimeError(f"Error opening ZED camera with IP: {ip}:{port}")
 
-        self._runtime_parameters = sl.RuntimeParameters()
-        self._runtime_parameters.confidence_threshold = 50
-
         self._positional_tracking_parameters = sl.PositionalTrackingParameters(
             set_floor_as_origin=True,
             enable_imu_fusion=False,
         )
+
+        returned_state = self._zed.enable_positional_tracking(self._positional_tracking_parameters)
+        if returned_state != sl.ERROR_CODE.SUCCESS:
+            print("Enable Positional Tracking Failed : " + repr(returned_state) + ". Exit program.")
+            exit()
+
+        self._runtime_parameters = sl.RuntimeParameters()
+        self._runtime_parameters.confidence_threshold = 50
         self._spatial_mapping_parameters = sl.SpatialMappingParameters(
             resolution=sl.MAPPING_RESOLUTION.MEDIUM,
             mapping_range=sl.MAPPING_RANGE.MEDIUM,
@@ -181,10 +186,8 @@ class ZedCamera:
     def run(self):
         self._running = True
         self._last_call = time.time()
-        returned_state = self._zed.enable_positional_tracking(self._positional_tracking_parameters)
-        if returned_state != sl.ERROR_CODE.SUCCESS:
-            print("Enable Positional Tracking Failed : " + repr(returned_state) + ". Exit program.")
-            exit()
+        init_position = sl.Transform()
+        self._zed.reset_positional_tracking(init_position)
         self._viewer.init(self._zed.get_camera_information().camera_configuration.calibration_parameters.left_cam, self._pymesh, 1)
 
     def grab(self):
