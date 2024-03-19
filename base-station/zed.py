@@ -1,7 +1,6 @@
 import threading
 import time
 
-import pyzed
 import pyzed.sl as sl
 import ogl_viewer.viewer as gl
 
@@ -152,11 +151,19 @@ class ZedCamera:
         self._runtime_parameters = sl.RuntimeParameters()
         self._runtime_parameters.confidence_threshold = 50
 
-        self._spatial_mapping_parameters = sl.SpatialMappingParameters(resolution=sl.MAPPING_RESOLUTION.MEDIUM,
-                                                                 mapping_range=sl.MAPPING_RANGE.MEDIUM,
-                                                                 max_memory_usage=2048, save_texture=False,
-                                                                 use_chunk_only=True, reverse_vertex_order=False,
-                                                                 map_type=sl.SPATIAL_MAP_TYPE.MESH)
+        self._positional_tracking_parameters = sl.PositionalTrackingParameters(
+            set_floor_as_origin=True,
+            enable_imu_fusion=False,
+        )
+        self._spatial_mapping_parameters = sl.SpatialMappingParameters(
+            resolution=sl.MAPPING_RESOLUTION.MEDIUM,
+            mapping_range=sl.MAPPING_RANGE.MEDIUM,
+            max_memory_usage=2048,
+            save_texture=True,
+            use_chunk_only=True,
+            reverse_vertex_order=False,
+            map_type=sl.SPATIAL_MAP_TYPE.MESH,
+        )
 
         self._markers = []
         self._position = sl.Pose()
@@ -167,10 +174,74 @@ class ZedCamera:
         self._mapping_active = False
         self._running = False
 
-        self._monitor_thread = threading.Thread(target=self._run, args=())
-        self._monitor_thread.daemon = True
-
         self._viewer = gl.GLViewer()
+
+        self.FILEPATH = "mesh_gen.obj"
+
+    def run(self):
+        self._running = True
+        self._last_call = time.time()
+        returned_state = self._zed.enable_positional_tracking(self._positional_tracking_parameters)
+        if returned_state != sl.ERROR_CODE.SUCCESS:
+            print("Enable Positional Tracking Failed : " + repr(returned_state) + ". Exit program.")
+            exit()
+        self._viewer.init(self._zed.get_camera_information().camera_configuration.calibration_parameters.left_cam, self._pymesh, 1)
+
+    def grab(self):
+        if not self._running or not self._viewer.is_available():
+            return False
+        grab = self._zed.grab(self._runtime_parameters)
+        if grab == sl.ERROR_CODE.SUCCESS:
+            self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
+            tracking_state = self._zed.get_position(self._position)
+
+            if self._mapping_active:
+                mapping_state = self._zed.get_spatial_mapping_state()
+                duration = time.time() - self._last_call
+                if duration > 0.5 and self._viewer.chunks_updated():
+                    self._zed.request_spatial_map_async()
+                    self._last_call = time.time()
+
+                if self._zed.get_spatial_map_request_status_async() == sl.ERROR_CODE.SUCCESS:
+                    self._zed.retrieve_spatial_map_async(self._pymesh)
+                    self._viewer.update_chunks()
+            else:
+                mapping_state = sl.SPATIAL_MAPPING_STATE.NOT_ENABLED
+
+            self._viewer.update_view(self._image, self._position.pose_data(), tracking_state, mapping_state)
+        else:
+            print(f"Grabbing from ZED camera failed. ERROR CODE: {grab}")
+        return True
+
+    def toggle_mapping(self):
+        if not self._running:
+            raise RuntimeError("Cannot enable mapping when the viewer is not running.")
+        if not self._mapping_active:
+            init_position = sl.Transform()
+            self._zed.reset_positional_tracking(init_position)
+            self._zed.enable_spatial_mapping(self._spatial_mapping_parameters)
+
+            self._pymesh.clear()
+            self._viewer.clear_current_mesh()
+
+            self._last_call = time.time()
+
+            self._mapping_active = True
+        else:
+            self._zed.extract_whole_spatial_map(self._pymesh)
+            filter_params = sl.MeshFilterParameters()
+            filter_params.set(sl.MESH_FILTER.MEDIUM)
+            self._pymesh.filter(filter_params, True)
+            self._viewer.clear_current_mesh()
+            self._pymesh.apply_texture(sl.MESH_TEXTURE_FORMAT.RGBA)
+
+            status = self._pymesh.save(self.FILEPATH)
+            if status:
+                print(f"Initial mesh saved under {self.FILEPATH}")
+            else:
+                print(f"Failed to save initial mesh under {self.FILEPATH}")
+
+            self._mapping_active = False
 
     def close(self):
         self._running = False
@@ -181,75 +252,19 @@ class ZedCamera:
         self._zed.disable_positional_tracking()
         self._zed.close()
 
-    def run(self):
-        self._running = True
-        self._last_call = time.time()
-        positional_tracking_parameters = sl.PositionalTrackingParameters()
-        positional_tracking_parameters.set_floor_as_origin = True
-        returned_state = self._zed.enable_positional_tracking(positional_tracking_parameters)
-        if returned_state != sl.ERROR_CODE.SUCCESS:
-            print("Enable Positional Tracking Failed : " + repr(returned_state) + ". Exit program.")
-            exit()
-        self._viewer.init(self._zed.get_camera_information().camera_configuration.calibration_parameters.left_camera, self._pymesh, 1)
-        self._monitor_thread.start()
 
-    def _run(self):
-        while self._running and self._viewer.is_available():
-            if self._zed.grab(self._runtime_parameters) == sl.ERROR_CODE.SUCCESS:
-                self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
-                tracking_state = self._zed.get_position(self._position)
-                mapping_state = self._zed.get_spatial_mapping_state()
-                print(f"POSITIONAL STATUS: {tracking_state}\tMAPPING STATUS: {mapping_state}")
-
-                if self._mapping_active:
-                    duration = time.time() - self._last_call
-
-                    if duration > 0.5 and self._viewer.chunks_updated():
-                        self._zed.request_spatial_map_async()
-                        self._last_call = time.time()
-
-                    if self._zed.get_spatial_map_request_status_async() == sl.ERROR_CODE.SUCCESS:
-                        self._zed.retrieve_spatial_map_async(self._pymesh)
-                        self._viewer.update_chunks()
-
-                change_state = self._viewer.update_view(self._image, self._position.pose_date(), tracking_state, mapping_state)
-
-                if change_state:
-                    if not self._mapping_active:
-                        self._position = sl.Transform()
-                        self._zed.reset_positional_tracking(self._position)
-
-                        self._zed.enable_spatial_mapping(self._spatial_mapping_parameters)
-
-                        self._pymesh.clear()
-                        self._viewer.clear_current_mesh()
-
-                        self._last_call = time.time()
-
-                        self._mapping_active = True
-
-                    else:
-                        self._zed.extract_whole_spatial_map(self._pymesh)
-                        filter_params = sl.MeshFilterParameters()
-                        filter_params.set(sl.MESH_FILTER.MEDIUM)
-                        self._pymesh.filter(filter_params, True)
-                        self._viewer.clear_current_mesh()
-
-                        filepath = "mesh_gen.obj"
-                        status = self._pymesh.save(filepath)
-                        if status:
-                            print(f"Initial mesh saved under {filepath}")
-                        else:
-                            print(f"Failed to save initial mesh under {filepath}")
-
-                        mapping_state = sl.SPATIAL_MAPPING_STATE.NOT_ENABLED
-                        self._zed.disable_spatial_mapping()
-                        self._mapping_active = False
+def temp_thread(zed: ZedCamera):
+    while True:
+        input()
+        zed.toggle_mapping()
 
 
 if __name__ == "__main__":
     zed = ZedCamera("10.110.241.23", 8002)
+    thread = threading.Thread(target=temp_thread, args=(zed,))
+    thread.daemon = True
+    thread.start()
     zed.run()
-    input()
+    while zed.grab():
+        pass
     zed.close()
-
