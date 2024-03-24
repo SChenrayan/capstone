@@ -72,11 +72,14 @@ class ZedCamera:
 
     def grab(self):
         available = self._viewer.is_available()
+        print("available")
         if not self._running or not available:
             print(f"-------------- Unable to grab, running = {self.running}, available = {available}")
             return False
         grab = self._zed.grab(self._runtime_parameters)
+        print("grabbed")
         if grab == sl.ERROR_CODE.SUCCESS:
+            print("retrieving image")
             self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
             print(f"-------------- Retrieved image")
             tracking_state = self._zed.get_position(self._position)
@@ -94,7 +97,7 @@ class ZedCamera:
                     self._viewer.update_chunks()
             else:
                 mapping_state = sl.SPATIAL_MAPPING_STATE.NOT_ENABLED
-
+                # print("")
             self._viewer.update_view(self._image, self._position.pose_data(), tracking_state, mapping_state)
         else:
             print(f"Grabbing from ZED camera failed. ERROR CODE: {grab}")
@@ -126,7 +129,8 @@ class ZedCamera:
         global_position = sl.Pose()
         self._zed.retrieve_measure(point_cloud, sl.MEASURE.DEPTH)
         state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.WORLD)
-        depth = point_cloud.get_value(640, 360)
+
+        depth = point_cloud.get_value(640, 360)[1]
         if state == sl.POSITIONAL_TRACKING_STATE.OK:
             translation = sl.Translation()
             x = round(global_position.get_translation(translation).get()[0], 3)
@@ -153,19 +157,18 @@ class ZedCamera:
     def toggle_mapping(self):
         if not self._running:
             raise RuntimeError("Cannot enable mapping when the viewer is not running.")
+        self._viewer.clear_current_mesh()
         if not self._mapping_active:
             init_position = sl.Transform()
             self._zed.reset_positional_tracking(init_position)
             self._zed.enable_spatial_mapping(self._spatial_mapping_parameters)
-
-            self._pymesh.clear()
-            self._viewer.clear_current_mesh()
 
             self._last_call = time.time()
 
             self._mapping_active = True
         else:
             self.extract()
+            self._pymesh.clear()
             self._markers = []
             self._warnings = []
             self._mapping_active = False

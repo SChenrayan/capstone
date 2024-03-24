@@ -114,8 +114,9 @@ class Joystick:
                 for event in events:
                     self._consume_event(event)
             except Exception as e:  # Catch all exceptions so that thread stays alive
-                print("-------- ERROR IN JOYSTICK THREAD --------")
-                print(e)
+            #     print("-------- ERROR IN JOYSTICK THREAD --------")
+            #     print(e)
+                raise(e)
 
 
 if __name__ == "__main__":
