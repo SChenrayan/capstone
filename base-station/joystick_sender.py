@@ -59,14 +59,9 @@ class Joystick:
                 "y_left": self.y_left,
                 "x_right": self.x_right,
                 "y_right": self.y_right,
-                "trigger_left": self.trigger_left,
-                "trigger_right": self.trigger_right,
             },
             "buttons": {
                 "bumper_left": self.bumper_left,
-                "bumper_right": self.bumper_right,
-                "a": self.a,
-                "x": self.x,
             },
         }
 
@@ -98,6 +93,7 @@ class Joystick:
             self.bumper_left = event.state
         elif event.code == "BTN_TR":
             self.bumper_right = event.state
+        elif event.code == "BTN_START":
             if event.state == 1:
                 self._zed.toggle_mapping()
         elif event.code == "BTN_SOUTH":
@@ -107,15 +103,19 @@ class Joystick:
         elif event.code == "BTN_WEST":
             self.x = event.state
             if event.state == 1:
-                self._zed.get_crosshair_position()
+                self._zed.add_warning()
         else:
             print(f"Unknown event ({event.code}). Skipping.")
 
     def _monitor_events(self):
         while True:
-            events = inputs.get_gamepad()
-            for event in events:
-                self._consume_event(event)
+            try:
+                events = inputs.get_gamepad()
+                for event in events:
+                    self._consume_event(event)
+            except Exception as e:  # Catch all exceptions so that thread stays alive
+                print("-------- ERROR IN JOYSTICK THREAD --------")
+                print(e)
 
 
 if __name__ == "__main__":
