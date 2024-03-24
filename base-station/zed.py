@@ -106,7 +106,7 @@ class ZedCamera:
             return False
         global_position = sl.Pose()
         state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.WORLD)
-        if state == sl.TRACKING_STATE.OK:
+        if state == sl.POSITIONAL_TRACKING_STATE.OK:
             translation = sl.Translation()
             x = round(global_position.get_translation(translation).get()[0], 3)
             y = round(global_position.get_translation(translation).get()[1], 3)
@@ -127,7 +127,7 @@ class ZedCamera:
         self._zed.retrieve_measure(point_cloud, sl.MEASURE.DEPTH)
         state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.WORLD)
         depth = point_cloud.get_value(640, 360)
-        if state == sl.TRACKING_STATE.OK:
+        if state == sl.POSITIONAL_TRACKING_STATE.OK:
             translation = sl.Translation()
             x = round(global_position.get_translation(translation).get()[0], 3)
             y = round(global_position.get_translation(translation).get()[1], 3)
