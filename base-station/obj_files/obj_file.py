@@ -1,5 +1,5 @@
-from vertex import Vertex
-from face import Face
+from .vertex import Vertex
+from .face import Face
 
 
 class ObjFile:
