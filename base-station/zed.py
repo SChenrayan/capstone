@@ -74,17 +74,15 @@ class ZedCamera:
         available = self._viewer.is_available()
         print("available")
         if not self._running or not available:
-            print(f"-------------- Unable to grab, running = {self.running}, available = {available}")
+            print(f"-------------- Unable to grab, running = {self._running}, available = {available}")
             return False
         grab = self._zed.grab(self._runtime_parameters)
         print("grabbed")
         if grab == sl.ERROR_CODE.SUCCESS:
             print("retrieving image")
             self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
-            print(f"-------------- Retrieved image")
             tracking_state = self._zed.get_position(self._position)
-            print(f"-------------- Tracking state = {tracking_state}")
-
+            
             if self._mapping_active:
                 mapping_state = self._zed.get_spatial_mapping_state()
                 duration = time.time() - self._last_call
@@ -198,11 +196,3 @@ class ZedCamera:
         self._zed.disable_spatial_mapping()
         self._zed.disable_positional_tracking()
         self._zed.close()
-
-
-if __name__ == "__main__":
-    zed = ZedCamera("10.110.241.132", 8002)
-    zed.run()
-    while zed.grab():
-        pass
-    zed.close()
