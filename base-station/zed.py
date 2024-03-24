@@ -14,6 +14,7 @@ class ZedCamera:
         init.coordinate_units = sl.UNIT.METER
         init.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP  # OpenGL's coordinate system is right_handed
         init.camera_resolution = sl.RESOLUTION.HD720
+        init.sdk_verbose = True
         init.set_from_stream(ip, port)
         print(f"-------------- Opening camera on address: {ip}:{port}")
         self._zed = sl.Camera()
@@ -104,7 +105,7 @@ class ZedCamera:
             print(f"Cannot place markers while not mapping")
             return False
         global_position = sl.Pose()
-        state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.FRAME_WORLD)
+        state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.WORLD)
         if state == sl.TRACKING_STATE.OK:
             translation = sl.Translation()
             x = round(global_position.get_translation(translation).get()[0], 3)
@@ -124,7 +125,7 @@ class ZedCamera:
         point_cloud = sl.Mat()
         global_position = sl.Pose()
         self._zed.retrieve_measure(point_cloud, sl.MEASURE.DEPTH)
-        state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.FRAME_WORLD)
+        state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.WORLD)
         depth = point_cloud.get_value(640, 360)
         if state == sl.TRACKING_STATE.OK:
             translation = sl.Translation()

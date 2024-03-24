@@ -119,7 +119,7 @@ class Joystick:
 
 
 if __name__ == "__main__":
-    zed = ZedCamera("10.110.241.132", 8002)
+    zed = ZedCamera("10.110.186.61", 8002)
     print("Zed initialized")
     time.sleep(0.3)
     joy = Joystick(zed)
