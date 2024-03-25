@@ -157,7 +157,6 @@ class ZedCamera:
     def toggle_mapping(self):
         if not self._running:
             raise RuntimeError("Cannot enable mapping when the viewer is not running.")
-        self._viewer.clear_current_mesh()
         if not self._mapping_active:
             init_position = sl.Transform()
             self._zed.reset_positional_tracking(init_position)
@@ -168,17 +167,16 @@ class ZedCamera:
             self._mapping_active = True
         else:
             self.extract()
-            self._pymesh.clear()
             self._markers = []
             self._warnings = []
             self._mapping_active = False
+            self._viewer.clear_current_mesh()
 
     def extract(self):
         self._zed.extract_whole_spatial_map(self._pymesh)
         filter_params = sl.MeshFilterParameters()
         filter_params.set(sl.MESH_FILTER.MEDIUM)
         self._pymesh.filter(filter_params, True)
-        self._viewer.clear_current_mesh()
         self._pymesh.apply_texture(sl.MESH_TEXTURE_FORMAT.RGBA)
 
         status = self._pymesh.save(self.FILEPATH)
