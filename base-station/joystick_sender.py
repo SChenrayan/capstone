@@ -6,6 +6,7 @@ import inputs
 import threading
 import json
 import argparse
+from .util import log
 from zed import ZedCamera
 
 parser = argparse.ArgumentParser(
@@ -117,7 +118,7 @@ class Joystick:
             if event.state == 1:
                 self._zed.add_warning()
         else:
-            print(f"Unknown event ({event.code}). Skipping.")
+            log(f"Unknown event ({event.code}). Skipping.")
 
     def _monitor_events(self):
         while True:
@@ -126,9 +127,9 @@ class Joystick:
                 for event in events:
                     self._consume_event(event)
             except Exception as e:  # Catch all exceptions so that thread stays alive
-                print("----------- Exception in joy thread -----------")
-                print(e)
-                print("----------- Traceback -----------")
+                log("----------- Exception in joy thread -----------")
+                log(e)
+                log("----------- Traceback -----------")
                 traceback.print_exc()
 
 
@@ -136,13 +137,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     zed = ZedCamera(args.ip, args.port)
-    print("Zed initialized")
+    log("Zed initialized")
     time.sleep(0.3)
     joy = Joystick(zed)
-    print("Joy initialized")
+    log("Joy initialized")
     time.sleep(0.3)
     joy.run()
-    print("Running joy")
+    log("Running joy")
     while zed.grab():
         time.sleep(0.05)
         pass

@@ -3,6 +3,7 @@ import time
 
 import pyzed.sl as sl
 import ogl_viewer.viewer as gl
+from .util import log
 from obj_files.vertex import Vertex
 from obj_files.add_markers import add_markers
 
@@ -16,14 +17,14 @@ class ZedCamera:
         init.camera_resolution = sl.RESOLUTION.HD720
         init.sdk_verbose = True
         init.set_from_stream(ip, port)
-        print(f"-------------- Opening camera on address: {ip}:{port}")
+        log(f"-------------- Opening camera on address: {ip}:{port}")
         self._zed = sl.Camera()
         status = self._zed.open(init)
         if status != sl.ERROR_CODE.SUCCESS:
-            print("Camera Open : " + repr(status) + ". Exit program.")
+            log("Camera Open : " + repr(status) + ". Exit program.")
             raise RuntimeError(f"Error opening ZED camera with IP: {ip}:{port}")
 
-        print(f"-------------- Opened camera")
+        log(f"-------------- Opened camera")
 
         self._positional_tracking_parameters = sl.PositionalTrackingParameters()
         self._positional_tracking_parameters.set_floor_as_origin = True
@@ -31,10 +32,10 @@ class ZedCamera:
 
         returned_state = self._zed.enable_positional_tracking(self._positional_tracking_parameters)
         if returned_state != sl.ERROR_CODE.SUCCESS:
-            print("Enable Positional Tracking Failed : " + repr(returned_state) + ". Exit program.")
+            log("Enable Positional Tracking Failed : " + repr(returned_state) + ". Exit program.")
             exit()
 
-        print("-------------- Enabled positional tracking")
+        log("-------------- Enabled positional tracking")
 
         self._runtime_parameters = sl.RuntimeParameters()
         self._runtime_parameters.confidence_threshold = 50
@@ -68,21 +69,32 @@ class ZedCamera:
         init_position = sl.Transform()
         self._zed.reset_positional_tracking(init_position)
         self._viewer.init(self._zed.get_camera_information().camera_configuration.calibration_parameters.left_cam, self._pymesh, 1)
-        print("-------------- Initialized view")
+        log("-------------- Initialized view")
 
     def grab(self):
         available = self._viewer.is_available()
         print("available")
         if not self._running or not available:
+<<<<<<< HEAD
             print(f"-------------- Unable to grab, running = {self._running}, available = {available}")
+=======
+            log(f"-------------- Unable to grab, running = {self.running}, available = {available}")
+>>>>>>> 308536f (add log helper)
             return False
         grab = self._zed.grab(self._runtime_parameters)
         print("grabbed")
         if grab == sl.ERROR_CODE.SUCCESS:
             print("retrieving image")
             self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
+<<<<<<< HEAD
             tracking_state = self._zed.get_position(self._position)
             
+=======
+            log(f"-------------- Retrieved image")
+            tracking_state = self._zed.get_position(self._position)
+            log(f"-------------- Tracking state = {tracking_state}")
+
+>>>>>>> 308536f (add log helper)
             if self._mapping_active:
                 mapping_state = self._zed.get_spatial_mapping_state()
                 duration = time.time() - self._last_call
@@ -98,12 +110,12 @@ class ZedCamera:
                 # print("")
             self._viewer.update_view(self._image, self._position.pose_data(), tracking_state, mapping_state)
         else:
-            print(f"Grabbing from ZED camera failed. ERROR CODE: {grab}")
+            log(f"Grabbing from ZED camera failed. ERROR CODE: {grab}")
         return True
 
     def add_marker(self):
         if not self._mapping_active:
-            print(f"Cannot place markers while not mapping")
+            log(f"Cannot place markers while not mapping")
             return False
         global_position = sl.Pose()
         state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.WORLD)
@@ -113,15 +125,15 @@ class ZedCamera:
             y = round(global_position.get_translation(translation).get()[1], 3)
             z = round(global_position.get_translation(translation).get()[2], 3)
             self._markers.append(Vertex(x, y, z))
-            print(f"Marker added at position: {x}, {y}, {z}")
+            log(f"Marker added at position: {x}, {y}, {z}")
             return True
         else:
-            print(f"Unable to place marker because tracking state is {state}")
+            log(f"Unable to place marker because tracking state is {state}")
             return False
 
     def add_warning(self):
         if not self._mapping_active:
-            print(f"Cannot place markers while not mapping")
+            log("Cannot place markers while not mapping")
             return False
         point_cloud = sl.Mat()
         global_position = sl.Pose()
@@ -146,10 +158,10 @@ class ZedCamera:
             z += dz
 
             self._warnings.append(Vertex(x, y, z))
-            print(f"Marker added at position: {x}, {y}, {z}")
+            log(f"Marker added at position: {x}, {y}, {z}")
             return True
         else:
-            print(f"Unable to place marker because tracking state is {state}")
+            log(f"Unable to place marker because tracking state is {state}")
             return False
 
     def toggle_mapping(self):
@@ -179,15 +191,15 @@ class ZedCamera:
 
         status = self._pymesh.save(self.FILEPATH)
         if status:
-            print(f"Initial mesh saved under {self.FILEPATH}")
+            log(f"Initial mesh saved under {self.FILEPATH}")
         else:
-            print(f"Failed to save initial mesh under {self.FILEPATH}")
+            log(f"Failed to save initial mesh under {self.FILEPATH}")
 
         add_markers(self.FILEPATH, self._markers, self._warnings)
-        print(f"Markers added to mesh under {self.FILEPATH}")
+        log(f"Markers added to mesh under {self.FILEPATH}")
 
     def close(self):
-        print("-------------- Closing ZED")
+        log("-------------- Closing ZED")
         self._viewer.exit()
         self._running = False
         self._image.free(memory_type=sl.MEM.CPU)
