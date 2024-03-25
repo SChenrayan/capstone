@@ -334,6 +334,13 @@ class GLViewer:
         self.change_state = False
         return copy_state
 
+    # TODO: this is hacky can we do this better
+    def lock(self):
+        self.mutex.acquire()
+    
+    def unlock(self):
+        self.mutex.release()
+
     def idle(self):
         if self.available:
             glutPostRedisplay()

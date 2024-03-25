@@ -6,7 +6,7 @@ import inputs
 import threading
 import json
 import argparse
-from .util import log
+from util import log
 from zed import ZedCamera
 
 parser = argparse.ArgumentParser(

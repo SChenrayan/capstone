@@ -3,7 +3,7 @@ import time
 
 import pyzed.sl as sl
 import ogl_viewer.viewer as gl
-from .util import log
+from util import log
 from obj_files.vertex import Vertex
 from obj_files.add_markers import add_markers
 
@@ -75,26 +75,17 @@ class ZedCamera:
         available = self._viewer.is_available()
         print("available")
         if not self._running or not available:
-<<<<<<< HEAD
-            print(f"-------------- Unable to grab, running = {self._running}, available = {available}")
-=======
-            log(f"-------------- Unable to grab, running = {self.running}, available = {available}")
->>>>>>> 308536f (add log helper)
+            log(f"-------------- Unable to grab, running = {self._running}, available = {available}")
             return False
         grab = self._zed.grab(self._runtime_parameters)
         print("grabbed")
         if grab == sl.ERROR_CODE.SUCCESS:
             print("retrieving image")
             self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
-<<<<<<< HEAD
-            tracking_state = self._zed.get_position(self._position)
-            
-=======
             log(f"-------------- Retrieved image")
             tracking_state = self._zed.get_position(self._position)
             log(f"-------------- Tracking state = {tracking_state}")
 
->>>>>>> 308536f (add log helper)
             if self._mapping_active:
                 mapping_state = self._zed.get_spatial_mapping_state()
                 duration = time.time() - self._last_call
@@ -149,9 +140,10 @@ class ZedCamera:
 
             rotation = global_position.get_rotation_vector()
             pitch, yaw = round(rotation[0], 3), round(rotation[1], 3)
-            dx = -1 * depth * math.sin(yaw) * math.cos(pitch)
+            ground_proj = depth * math.cos(pitch) - 0.25  # Move marker closer to avoid clipping
+            dx = -1 * math.sin(yaw) * ground_proj
             dy = depth * math.sin(pitch)
-            dz = -1 * depth * math.cos(yaw) * math.cos(pitch)
+            dz = -1 * math.cos(yaw) * ground_proj
 
             x += dx
             y += dy
@@ -167,6 +159,8 @@ class ZedCamera:
     def toggle_mapping(self):
         if not self._running:
             raise RuntimeError("Cannot enable mapping when the viewer is not running.")
+        
+        self._viewer.lock()
         if not self._mapping_active:
             init_position = sl.Transform()
             self._zed.reset_positional_tracking(init_position)
@@ -182,10 +176,13 @@ class ZedCamera:
             self._mapping_active = False
             self._viewer.clear_current_mesh()
 
+        self._viewer.unlock()
+
     def extract(self):
         self._zed.extract_whole_spatial_map(self._pymesh)
         filter_params = sl.MeshFilterParameters()
         filter_params.set(sl.MESH_FILTER.MEDIUM)
+        
         self._pymesh.filter(filter_params, True)
         self._pymesh.apply_texture(sl.MESH_TEXTURE_FORMAT.RGBA)
 
