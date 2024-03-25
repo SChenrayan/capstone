@@ -1,6 +1,6 @@
-from face import Face
-from obj_file import ObjFile
-from vertex import Vertex
+from .face import Face
+from .obj_file import ObjFile
+from .vertex import Vertex
 
 
 class Cube(ObjFile):
@@ -31,22 +31,22 @@ class Cube(ObjFile):
 class ExclamationPoint(ObjFile):
     def __init__(self):
         vertices = [
-            Vertex(0, 0, 0),
-            Vertex(0.25, 0, 0),
-            Vertex(0.25, 0.25, 0),
-            Vertex(0, 0.25, 0),
-            Vertex(0, 0, 0.25),
-            Vertex(0.25, 0, 0.25),
-            Vertex(0.25, 0.25, 0.25),
-            Vertex(0, 0.25, 0.5),
-            Vertex(0, 0.5, 0),
-            Vertex(0.25, 0.5, 0),
-            Vertex(0.25, 1, 0),
-            Vertex(0, 1, 0),
-            Vertex(0, 0.5, 0.25),
-            Vertex(0.25, 0.5, 0.25),
-            Vertex(0.25, 1, 0.25),
-            Vertex(0, 1, 0.25),
+            Vertex(-0.125, 0, -0.125),
+            Vertex(0.125, 0, -0.125),
+            Vertex(0.125, 0.25, -0.125),
+            Vertex(-0.125, 0.25, -0.125),
+            Vertex(-0.125, 0, 0.125),
+            Vertex(0.125, 0, 0.125),
+            Vertex(0.125, 0.25, 0.125),
+            Vertex(-0.125, 0.25, 0.125),
+            Vertex(-0.125, 0.5, -0.125),
+            Vertex(0.125, 0.5, -0.125),
+            Vertex(0.125, 1, -0.125),
+            Vertex(-0.125, 1, -0.125),
+            Vertex(-0.125, 0.5, 0.125),
+            Vertex(0.125, 0.5, 0.125),
+            Vertex(0.125, 1, 0.125),
+            Vertex(-0.125, 1, 0.125),
         ]
 
         faces = [
@@ -62,6 +62,59 @@ class ExclamationPoint(ObjFile):
             Face([10, 11, 15, 14]),
             Face([11, 12, 16, 15]),
             Face([12, 9, 13, 16]),
+        ]
+
+        super().__init__(vertices, faces)
+
+
+class PlusSign(ObjFile):
+    def __init__(self):
+        vertices = [
+            Vertex(-0.125, 0, -0.125),
+            Vertex(0.125, 0, -0.125),
+            Vertex(-0.125, 0, 0.125),
+            Vertex(0.125, 0, 0.125),
+            Vertex(-0.125, 0.166, -0.125),
+            Vertex(0.125, 0.166, -0.125),
+            Vertex(-0.125, 0.166, 0.125),
+            Vertex(0.125, 0.166, 0.125),
+            Vertex(-0.125, 0.333, -0.125),
+            Vertex(0.125, 0.333, -0.125),
+            Vertex(-0.125, 0.333, 0.125),
+            Vertex(0.125, 0.333, 0.125),
+            Vertex(-0.125, 0.5, -0.125),
+            Vertex(0.125, 0.5, -0.125),
+            Vertex(-0.125, 0.5, 0.125),
+            Vertex(0.125, 0.5, 0.125),
+            Vertex(-0.25, 0.166, -0.125),
+            Vertex(0.25, 0.166, -0.125),
+            Vertex(-0.25, 0.166, 0.125),
+            Vertex(0.25, 0.166, 0.125),
+            Vertex(-0.25, 0.333, -0.125),
+            Vertex(0.25, 0.333, -0.125),
+            Vertex(-0.25, 0.333, 0.125),
+            Vertex(0.25, 0.333, 0.125),
+        ]
+
+        faces = [
+            Face([1, 2, 4, 3]),
+            Face([13, 14, 16, 15]),
+            Face([1, 2, 6, 5]),
+            Face([9, 10, 14, 13]),
+            Face([17, 18, 22, 21]),
+            Face([3, 4, 8, 7]),
+            Face([11, 12, 16, 15]),
+            Face([19, 20, 24, 23]),
+            Face([9, 11, 15, 13]),
+            Face([1, 3, 7, 5]),
+            Face([9, 11, 23, 21]),
+            Face([17, 19, 23, 21]),
+            Face([5, 7, 19, 17]),
+            Face([10, 12, 16, 14]),
+            Face([2, 4, 8, 6]),
+            Face([10, 12, 24, 22]),
+            Face([18, 20, 24, 22]),
+            Face([6, 8, 20, 18]),
         ]
 
         super().__init__(vertices, faces)

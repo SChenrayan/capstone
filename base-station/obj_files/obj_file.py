@@ -1,5 +1,5 @@
-from vertex import Vertex
-from face import Face
+from .vertex import Vertex
+from .face import Face
 
 
 class ObjFile:
@@ -39,6 +39,4 @@ class ObjFile:
                     continue
                 if line_lst[0] == "v":
                     vertices.append(Vertex(float(line_lst[1]), float(line_lst[2]), float(line_lst[3])))
-                elif line_lst[0] == "f":
-                    faces.append(Face([int(vertex) for vertex in line_lst[1:]]))
         return ObjFile(vertices, faces)
