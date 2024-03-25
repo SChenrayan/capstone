@@ -1,4 +1,6 @@
 import time
+import traceback
+
 import pika
 import inputs
 import threading
@@ -95,6 +97,9 @@ class Joystick:
             self.bumper_right = event.state
         elif event.code == "BTN_START":
             if event.state == 1:
+                self._zed.close()
+        elif event.code == "BTN_SELECT":
+            if event.state == 1:
                 self._zed.toggle_mapping()
         elif event.code == "BTN_SOUTH":
             self.a = event.state
@@ -114,9 +119,10 @@ class Joystick:
                 for event in events:
                     self._consume_event(event)
             except Exception as e:  # Catch all exceptions so that thread stays alive
-            #     print("-------- ERROR IN JOYSTICK THREAD --------")
-            #     print(e)
-                raise(e)
+                print("----------- Exception in joy thread -----------")
+                print(e)
+                print("----------- Traceback -----------")
+                traceback.print_exc()
 
 
 if __name__ == "__main__":
