@@ -5,8 +5,15 @@ import pika
 import inputs
 import threading
 import json
+import argparse
 from zed import ZedCamera
 
+parser = argparse.ArgumentParser(
+    prog='joystick_sender.py',
+    description='Sends joystick data to SiamiLab JetsonTX2'
+)
+parser.add_argument('ip')
+parser.add_argument('--port', default=8002, required=False)
 
 class Joystick:
     def __init__(self, zed: ZedCamera):
@@ -126,7 +133,9 @@ class Joystick:
 
 
 if __name__ == "__main__":
-    zed = ZedCamera("10.110.186.61", 8002)
+    args = parser.parse_args()
+
+    zed = ZedCamera(args.ip, args.port)
     print("Zed initialized")
     time.sleep(0.3)
     joy = Joystick(zed)
