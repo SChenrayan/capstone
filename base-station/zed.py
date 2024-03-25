@@ -139,9 +139,9 @@ class ZedCamera:
 
             rotation = global_position.get_rotation_vector()
             pitch, yaw = round(rotation[0], 3), round(rotation[1], 3)
-            dx = depth * math.sin(yaw) * math.cos(pitch)
+            dx = -1 * depth * math.sin(yaw) * math.cos(pitch)
             dy = depth * math.sin(pitch)
-            dz = depth * math.cos(yaw) * math.cos(pitch)
+            dz = -1 * depth * math.cos(yaw) * math.cos(pitch)
 
             x += dx
             y += dy
