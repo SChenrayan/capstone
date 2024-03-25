@@ -1,6 +1,7 @@
 import cv2 as cv
 import numpy as np
 import json
+import datetime
 
 class Viewer:
     def __init__(self):
@@ -37,7 +38,22 @@ class Viewer:
         self.write(f"Altitude: {data['altitude']}", (10, 650))
         self.write(f"Temperature: {data['temp']}", (10, 700))
         self.update_img()
-
+        
+    def log_popup(self, log_string):
+        cv.namedWindow("Logger")
+        log_img = np.zeros((200, 800, 3), dtype=np.uint8)
+        cv.putText(log_img,"[" + str(datetime.datetime.now()) + "] " + log_string, (50,50), cv.FONT_HERSHEY_COMPLEX, 1, (255,255,255),1,2)
+        cv.imshow("Logger", log_img)
+        
+        k = cv.waitKey(33)
+        if k==27:    # Esc key to close log window
+            cv.destroyWindow("Logger")
+        
+        # def close_logger(args):
+        #     cv.destroyWindow("Logger")
+        
+        # cv.createButton(buttonName="Close", onChange=close_logger, userData=None, buttonType=cv.QT_PUSH_BUTTON,initialButtonState=1)
+    
     def write(self, text, pos):
         font      = cv.FONT_HERSHEY_SIMPLEX
         fontScale = 1
