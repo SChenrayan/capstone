@@ -39,7 +39,7 @@ class Joystick:
         self.dpad_up = 0
         self.dpad_down = 0
 
-        self.last_sent = time.time()
+        self.last_data = self.data()
 
         self._monitor_thread = threading.Thread(target=self._monitor_events, args=())
         self._monitor_thread.daemon = True
@@ -49,9 +49,13 @@ class Joystick:
         self._channel.queue_declare(queue='joy_state')
 
         self._zed = zed
+        self._popup = None
 
     def __del__(self):
         self._connection.close()
+
+    def set_popup(self, popup_func):
+        self._popup = popup_func
 
     def run(self):
         self._zed.run()
@@ -85,13 +89,15 @@ class Joystick:
 
     def _consume_event(self, event):
         if event.code == "SYN_REPORT":
-            self._channel.basic_publish(exchange="", routing_key="joy_state", body=self.data())
-            print(f"Published {self.data()}")
+            current_data = self.data()
+            if current_data != self.last_data:
+                self._channel.basic_publish(exchange="", routing_key="joy_state", body=current_data)
+                self.last_data = current_data
         elif event.code == "ABS_X":
             state = event.state if abs(event.state) > 130 else 0
             self.x_left = state
         elif event.code == "ABS_Y":
-            state = event.state if abs(event.state) > 130 else 0
+            state = -1 * event.state if abs(event.state) > 130 else 0
             self.y_left = state
         elif event.code == "ABS_RX":
             state = event.state if abs(event.state) > 130 else 0
@@ -112,11 +118,15 @@ class Joystick:
         elif event.code == "BTN_SOUTH":
             self.a = event.state
             if event.state == 1:
-                self._zed.add_marker()
+                msg = self._zed.add_marker()
+                if self._popup:
+                    self._popup(msg)
         elif event.code == "BTN_WEST":
             self.x = event.state
             if event.state == 1:
-                self._zed.add_warning()
+                msg = self._zed.add_warning()
+                if self._popup:
+                    self._popup(msg)
         else:
             log(f"Unknown event ({event.code}). Skipping.")
 

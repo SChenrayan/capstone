@@ -104,10 +104,11 @@ class ZedCamera:
             log(f"Grabbing from ZED camera failed. ERROR CODE: {grab}")
         return True
 
-    def add_marker(self):
+    def add_marker(self) -> str:
         if not self._mapping_active:
-            log(f"Cannot place markers while not mapping")
-            return False
+            msg = "Cannot place markers while not mapping"
+            log(msg)
+            return msg
         global_position = sl.Pose()
         state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.WORLD)
         if state == sl.POSITIONAL_TRACKING_STATE.OK:
@@ -116,16 +117,19 @@ class ZedCamera:
             y = round(global_position.get_translation(translation).get()[1], 3)
             z = round(global_position.get_translation(translation).get()[2], 3)
             self._markers.append(Vertex(x, y, z))
-            log(f"Marker added at position: {x}, {y}, {z}")
-            return True
+            msg = f"Marker added at position: {x}, {y}, {z}"
+            log(msg)
+            return msg
         else:
-            log(f"Unable to place marker because tracking state is {state}")
-            return False
+            msg = f"Unable to place marker because tracking state is {state}"
+            log(msg)
+            return msg
 
-    def add_warning(self):
+    def add_warning(self) -> str:
         if not self._mapping_active:
-            log("Cannot place markers while not mapping")
-            return False
+            msg = "Cannot place markers while not mapping"
+            log(msg)
+            return msg
         point_cloud = sl.Mat()
         global_position = sl.Pose()
         self._zed.retrieve_measure(point_cloud, sl.MEASURE.DEPTH)
@@ -150,16 +154,18 @@ class ZedCamera:
             z += dz
 
             self._warnings.append(Vertex(x, y, z))
-            log(f"Marker added at position: {x}, {y}, {z}")
-            return True
+            msg = f"Marker added at position: {x}, {y}, {z}"
+            log(msg)
+            return msg
         else:
-            log(f"Unable to place marker because tracking state is {state}")
-            return False
+            msg = f"Unable to place marker because tracking state is {state}"
+            log(msg)
+            return msg
 
     def toggle_mapping(self):
         if not self._running:
             raise RuntimeError("Cannot enable mapping when the viewer is not running.")
-        
+
         self._viewer.lock()
         if not self._mapping_active:
             init_position = sl.Transform()
@@ -182,7 +188,7 @@ class ZedCamera:
         self._zed.extract_whole_spatial_map(self._pymesh)
         filter_params = sl.MeshFilterParameters()
         filter_params.set(sl.MESH_FILTER.MEDIUM)
-        
+
         self._pymesh.filter(filter_params, True)
         self._pymesh.apply_texture(sl.MESH_TEXTURE_FORMAT.RGBA)
 
