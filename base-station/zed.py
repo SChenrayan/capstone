@@ -1,3 +1,4 @@
+import datetime
 import math
 import time
 
@@ -186,16 +187,17 @@ class ZedCamera:
         self._pymesh.filter(filter_params, True)
         self._pymesh.apply_texture(sl.MESH_TEXTURE_FORMAT.RGBA)
         
-        timestamped_path = self.FILEPATH + " " + str(datetime.datetime.now())
+        time = datetime.datetime.now()
+        timestamped_path = str(time.month) + "_" + str(time.day) + "_" + str(time.year) + "_" + str(time.hour) + "_" + str(time.minute) + "_" + str(time.second) + "_mesh_gen.obj"
 
-        status = self._pymesh.save(self.timestamped_path)
+        status = self._pymesh.save(timestamped_path)
         if status:
-            log(f"Initial mesh saved under {self.timestamped_path}")
+            log(f"Initial mesh saved under {timestamped_path}")
         else:
-            log(f"Failed to save initial mesh under {self.timestamped_path}")
+            log(f"Failed to save initial mesh under {timestamped_path}")
 
-        add_markers(self.timestamped_path, self._markers, self._warnings)
-        log(f"Markers added to mesh under {self.timestamped_path}")
+        add_markers(timestamped_path, self._markers, self._warnings)
+        log(f"Markers added to mesh under {timestamped_path}")
 
     def close(self):
         log("-------------- Closing ZED")
