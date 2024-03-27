@@ -23,16 +23,20 @@ def main(args):
     thermo_sensor = ts.ThermoSensor()
     humidity_sensor = hs.HumiditySensor()
 
+    print("Starting to send data")
+
     while True:
         try:
             channel.basic_publish(exchange='', routing_key='sensor-data', body=json.dumps(humidity_sensor.data()))
             channel.basic_publish(exchange='', routing_key='thermo-data', body=json.dumps(thermo_sensor.data()))
             time.sleep(sleep_rate)
-        except ValueError:
-            pass
         except KeyboardInterrupt:
             break
+        except Exception as e:
+            print(f"Exception found. Caught and printing below")
+            print(repr(e))
     connection.close()
+    print("Connection closed")
 
 
 if __name__ == '__main__':
