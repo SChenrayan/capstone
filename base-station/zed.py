@@ -19,14 +19,14 @@ class ZedCamera:
         init.camera_resolution = sl.RESOLUTION.HD720
         init.sdk_verbose = True
         init.set_from_stream(ip, port)
-        self._log(f"-------------- Opening camera on address: {ip}:{port}")
+        self._log(f"--- Opening camera on address: {ip}:{port}")
         self._zed = sl.Camera()
         status = self._zed.open(init)
         if status != sl.ERROR_CODE.SUCCESS:
             self._log("Camera Open : " + repr(status) + ". Exit program.")
             raise RuntimeError(f"Error opening ZED camera with IP: {ip}:{port}")
 
-        self._log(f"-------------- Opened camera")
+        self._log(f"--- Opened camera")
 
         self._positional_tracking_parameters = sl.PositionalTrackingParameters()
         self._positional_tracking_parameters.set_floor_as_origin = True
@@ -37,7 +37,7 @@ class ZedCamera:
             self._log("Enable Positional Tracking Failed : " + repr(returned_state) + ". Exit program.")
             exit()
 
-        self._log("-------------- Enabled positional tracking")
+        self._log("--- Enabled positional tracking")
 
         self._runtime_parameters = sl.RuntimeParameters()
         self._runtime_parameters.confidence_threshold = 50
