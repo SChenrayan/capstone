@@ -24,9 +24,15 @@ def main(args):
     humidity_sensor = hs.HumiditySensor()
 
     while True:
-        channel.basic_publish(exchange='', routing_key='sensor-data', body=json.dumps(humidity_sensor.data()))
-        channel.basic_publish(exchange='', routing_key='thermo-data', body=json.dumps(thermo_sensor.data()))
-        time.sleep(sleep_rate)
+        try:
+            channel.basic_publish(exchange='', routing_key='sensor-data', body=json.dumps(humidity_sensor.data()))
+            channel.basic_publish(exchange='', routing_key='thermo-data', body=json.dumps(thermo_sensor.data()))
+            time.sleep(sleep_rate)
+        except ValueError:
+            pass
+        except KeyboardInterrupt:
+            break
+    connection.close()
 
 
 if __name__ == '__main__':
