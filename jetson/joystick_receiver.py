@@ -64,7 +64,7 @@ class JoystickReceiver:
         self._connection.close()
         print("closed")
 
-    def callback(self, ch, method, properties, body):
+    def _callback(self, ch, method, properties, body):
         print(f"Body: {body}")
         body = json.loads(body)
         state = {
