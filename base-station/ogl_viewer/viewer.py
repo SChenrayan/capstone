@@ -1,4 +1,3 @@
-import Vertex as Vertex
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
@@ -458,7 +457,7 @@ class GLViewer:
                     glColor3f(0.55, 0.65, 0.55)
                     state_str = spatial_mapping_state_str + str(sl.SPATIAL_MAPPING_STATE.NOT_ENABLED)
             self.print_GL(-0.99, 0.83, state_str)
-            self.print_GL(0.99, 0.83, str(self.global_pose_tuple))
+            self.print_GL(-0.99, 0.76, str(self.global_pose_tuple))
 
 
 class SubMapObj:
