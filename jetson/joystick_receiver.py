@@ -60,7 +60,7 @@ class JoystickReceiver:
             try:
                 self._connection.process_data_events()
             except KeyboardInterrupt:
-                break
+                self._running = False
         self._connection.close()
         print("closed")
 
