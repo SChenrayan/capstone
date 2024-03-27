@@ -1,14 +1,12 @@
 import cv2 as cv
 import numpy as np
-import datetime
 from threading import Lock
-from util import log
 
 class SensorViewer:
     def __init__(self):
         self.window_name = "Jetson Sensor"
-        # 
-        self.img = np.zeros((720, 640, 3), dtype=np.uint8)
+        # TODO: Figure out the best size here
+        self.img = np.ones((720, 640, 3), dtype=np.uint8) * 255
         self.mutex = Lock()
         cv.namedWindow(self.window_name)
 
@@ -38,6 +36,7 @@ class SensorViewer:
         self.mutex.acquire()
         self.img[550:720, 0:640] = 255
 
+        # TODO: round these values
         self.write(f"Humidity: {data['humidity']}", (10, 580))
         self.write(f"Pressure: {data['pressure']}", (10, 620))
         self.write(f"Altitude: {data['altitude']}", (10, 660))
@@ -48,15 +47,10 @@ class SensorViewer:
         self.mutex.acquire()
         self.img[480:550, 0:640] = 255
 
-        self.write(str, (10, 500))
+        self.write(str, (10, 520))
         self.mutex.release()
 
-    def write(self, text, pos):
-        font = cv.FONT_HERSHEY_SIMPLEX
-        fontScale = 1
-        fontColor = (0, 0, 0)
-        thickness = 1
-        lineType = 2
+    def write(self, text, pos, font=cv.FONT_HERSHEY_SIMPLEX, fontScale=1, fontColor=(0, 0, 0), thickness=1, lineType=2):
         cv.putText(
             self.img,
             text,
