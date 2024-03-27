@@ -160,7 +160,7 @@ class ZedCamera:
     def toggle_mapping(self):
         if not self._running:
             raise RuntimeError("Cannot enable mapping when the viewer is not running.")
-        
+
         self._viewer.lock()
         if not self._mapping_active:
             init_position = sl.Transform()
@@ -183,12 +183,12 @@ class ZedCamera:
         self._zed.extract_whole_spatial_map(self._pymesh)
         filter_params = sl.MeshFilterParameters()
         filter_params.set(sl.MESH_FILTER.MEDIUM)
-        
+
         self._pymesh.filter(filter_params, True)
         self._pymesh.apply_texture(sl.MESH_TEXTURE_FORMAT.RGBA)
-        
+
         time = datetime.datetime.now()
-        timestamped_path = str(time.month) + "_" + str(time.day) + "_" + str(time.year) + "_" + str(time.hour) + "_" + str(time.minute) + "_" + str(time.second) + "_mesh_gen.obj"
+        timestamped_path = "mesh_objs/" + str(time.month) + "_" + str(time.day) + "_" + str(time.year) + "_" + str(time.hour) + "_" + str(time.minute) + "_" + str(time.second) + "_mesh_gen.obj"
 
         status = self._pymesh.save(timestamped_path)
         if status:
