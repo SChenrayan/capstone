@@ -19,14 +19,14 @@ class ZedCamera:
         init.camera_resolution = sl.RESOLUTION.HD720
         init.sdk_verbose = True
         init.set_from_stream(ip, port)
-        log(f"-------------- Opening camera on address: {ip}:{port}")
+        self._log(f"-------------- Opening camera on address: {ip}:{port}")
         self._zed = sl.Camera()
         status = self._zed.open(init)
         if status != sl.ERROR_CODE.SUCCESS:
-            log("Camera Open : " + repr(status) + ". Exit program.")
+            self._log("Camera Open : " + repr(status) + ". Exit program.")
             raise RuntimeError(f"Error opening ZED camera with IP: {ip}:{port}")
 
-        log(f"-------------- Opened camera")
+        self._log(f"-------------- Opened camera")
 
         self._positional_tracking_parameters = sl.PositionalTrackingParameters()
         self._positional_tracking_parameters.set_floor_as_origin = True
@@ -34,10 +34,10 @@ class ZedCamera:
 
         returned_state = self._zed.enable_positional_tracking(self._positional_tracking_parameters)
         if returned_state != sl.ERROR_CODE.SUCCESS:
-            log("Enable Positional Tracking Failed : " + repr(returned_state) + ". Exit program.")
+            self._log("Enable Positional Tracking Failed : " + repr(returned_state) + ". Exit program.")
             exit()
 
-        log("-------------- Enabled positional tracking")
+        self._log("-------------- Enabled positional tracking")
 
         self._runtime_parameters = sl.RuntimeParameters()
         self._runtime_parameters.confidence_threshold = 50
@@ -65,6 +65,9 @@ class ZedCamera:
         self._viewer = gl.GLViewer()
 
         self.FILEPATH = "mesh_gen.obj"
+    
+    def _log(self, msg):
+        log(msg, "ZED")
 
     def run(self):
         self._running = True
@@ -72,23 +75,18 @@ class ZedCamera:
         init_position = sl.Transform()
         self._zed.reset_positional_tracking(init_position)
         self._viewer.init(self._zed.get_camera_information().camera_configuration.calibration_parameters.left_cam, self._pymesh, 1)
-        log("-------------- Initialized view")
+        self._log("Initialized view")
 
     def grab(self):
         available = self._viewer.is_available()
-        print("available")
         if not self._running or not available:
-            log(f"-------------- Unable to grab, running = {self._running}, available = {available}")
+            self._log(f"Unable to grab, running = {self._running}, available = {available}")
             return False
         grab = self._zed.grab(self._runtime_parameters)
-        print("grabbed")
         if grab == sl.ERROR_CODE.SUCCESS:
-            print("retrieving image")
             self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
-            log(f"-------------- Retrieved image")
             self._zed.get_position(self._position)
             tracking_state, global_vertex = self.get_global_position()
-            log(f"-------------- Tracking state = {tracking_state}")
 
             if self._mapping_active:
                 mapping_state = self._zed.get_spatial_mapping_state()
@@ -102,10 +100,10 @@ class ZedCamera:
                     self._viewer.update_chunks()
             else:
                 mapping_state = sl.SPATIAL_MAPPING_STATE.NOT_ENABLED
-                # print("")
+                
             self._viewer.update_view(self._image, self._position.pose_data(), global_vertex.as_tuple(), tracking_state, mapping_state)
         else:
-            log(f"Grabbing from ZED camera failed. ERROR CODE: {grab}")
+            self._log(f"Grabbing from ZED camera failed. ERROR CODE: {grab}")
         return True
 
     def get_global_position(self) -> Tuple[Vertex, sl.POSITIONAL_TRACKING_STATE]:
@@ -122,23 +120,23 @@ class ZedCamera:
     def add_marker(self) -> str:
         if not self._mapping_active:
             msg = "Cannot place markers while not mapping"
-            log(msg)
+            self._log(msg)
             return msg
         vertex, state = self.get_global_position()
         if state == sl.POSITIONAL_TRACKING_STATE.OK:
             self._markers.append(vertex)
             msg = f"Marker added at position: {vertex.x}, {vertex.y}, {vertex.z}"
-            log(msg)
+            self._log(msg)
             return msg
         else:
             msg = f"Unable to place marker because tracking state is {state}"
-            log(msg)
+            self._log(msg)
             return msg
 
     def add_warning(self) -> str:
         if not self._mapping_active:
             msg = "Cannot place markers while not mapping"
-            log(msg)
+            self._log(msg)
             return msg
         point_cloud = sl.Mat()
         self._zed.retrieve_measure(point_cloud, sl.MEASURE.DEPTH)
@@ -158,11 +156,11 @@ class ZedCamera:
 
             self._warnings.append(warning_vertex)
             msg = f"Marker added at position: {warning_vertex.x}, {warning_vertex.y}, {warning_vertex.z}"
-            log(msg)
+            self._log(msg)
             return msg
         else:
             msg = f"Unable to place marker because tracking state is {state}"
-            log(msg)
+            self._log(msg)
             return msg
 
     def toggle_mapping(self):
@@ -200,15 +198,15 @@ class ZedCamera:
 
         status = self._pymesh.save(timestamped_path)
         if status:
-            log(f"Initial mesh saved under {timestamped_path}")
+            self._log(f"Initial mesh saved under {timestamped_path}")
         else:
-            log(f"Failed to save initial mesh under {timestamped_path}")
+            self._log(f"Failed to save initial mesh under {timestamped_path}")
 
         add_markers(timestamped_path, self._markers, self._warnings)
-        log(f"Markers added to mesh under {timestamped_path}")
+        self._log(f"Markers added to mesh under {timestamped_path}")
 
     def close(self):
-        log("-------------- Closing ZED")
+        self._log("Closing ZED")
         self._viewer.exit()
         self._running = False
         self._image.free(memory_type=sl.MEM.CPU)

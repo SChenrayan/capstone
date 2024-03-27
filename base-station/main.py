@@ -18,27 +18,28 @@ parser.add_argument('--zed-port', default=8002, required=False)
 parser.add_argument('--rabbitmq-port', default=5672, required=False)
 
 def main(args):
-    sensor_viewer = SensorViewer()
-    sensor_receiver = SensorReceiver(sensor_viewer, args.ip, args.rabbitmq_port)
-    sensor_thread = threading.Thread(target=sensor_receiver.start, args=())
-    sensor_thread.start()
-    log("Sensor receiver initialized")
-    zed = ZedCamera(args.ip, args.zed_port)
-    log("Zed initialized")
-    joy = Joystick(zed)
-    log("Joy initialized")
-    joy.set_popup(sensor_viewer.log_popup)
-    joy.run()
-    while zed.grab():
-        try:
-            sensor_viewer.show() 
-        except KeyboardInterrupt:
-            break
-
-    del joy
-    sensor_receiver.request_stop()
-    sensor_viewer.destroy()
-    log("Connections closed. Goodbye!")
+    try: 
+        sensor_viewer = SensorViewer()
+        sensor_receiver = SensorReceiver(sensor_viewer, args.ip, args.rabbitmq_port)
+        sensor_thread = threading.Thread(target=sensor_receiver.start, args=())
+        sensor_thread.start()
+        log("SensorReceiver initialized")
+        zed = ZedCamera(args.ip, args.zed_port)
+        log("Zed initialized")
+        joy = Joystick(zed)
+        log("Joy initialized")
+        joy.set_popup(sensor_viewer.write_popup)
+        joy.run()
+        while zed.grab():
+            try:
+                sensor_viewer.show() 
+            except KeyboardInterrupt:
+                break
+    finally:
+        del joy
+        sensor_receiver.request_stop()
+        sensor_viewer.destroy()
+        log("Connections closed. Goodbye!")
 
 
 if __name__ == "__main__":
