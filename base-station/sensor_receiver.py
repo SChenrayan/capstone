@@ -1,7 +1,10 @@
 import pika, sys, os, time
 import argparse
 import json
+import threading
 import sensor_viewer
+
+from util import log
 
 parser = argparse.ArgumentParser(
     prog='sensor_receiver.py',
@@ -47,34 +50,48 @@ def mock_connection():
 
 
 class SensorReceiver:
-    def __init__(self, ip, port):
+    def __init__(self, view, ip, port):
         self.ip = ip
         self.port = port
-        self._creds = pika.PlainCredentials('jetson-rabbitmq', 'jetson-rabbitmq')
-        self._conn_params = pika.ConnectionParameters(args.ip, args.port, '/', self._creds)
-        self._connection = pika.SelectConnection(self._conn_params)
-        self._channel = self._connection.channel()
-        self._channel.queue_declare(queue='thermo-data', on_message_callback=self._thermo_callback, auto_ack=True)
-        self._channel.queue_declare(queue='sensor-data', on_message_callback=self._sensor_callback, auto_ack=True)
-
-        self._view = sensor_viewer.SensorViewer()
+        self._view = view
+        self._running = False
 
     def _thermo_callback(self, ch, method, properties, body):
+        log("thermo callback called")
         body_json = json.loads(body)
         self._view.set_thermo_data(body_json)
 
     def _sensor_callback(self, ch, method, properties, body):
+        log("sensor callback called")
         body_json = json.loads(body)
         self._view.set_sensor_data(body_json)
 
-    def run(self):
-        self._connection.ioloop.start()
+    def start(self):
+        log("[Rabbit] opening conn")
+        self._running = True
+        creds = pika.PlainCredentials('jetson-rabbitmq', 'jetson-rabbitmq')
+        conn_params = pika.ConnectionParameters(self.ip, self.port, '/', creds)
+        connection = pika.BlockingConnection(conn_params)
+        channel = connection.channel()
 
-    def close(self):
-        self._connection.close()
+        log("[Rabbit] declaring queues")
+        channel.queue_declare(queue='thermo-data')
+        channel.queue_declare(queue='sensor-data')
 
-    def log_popup(self, log_string):
-        self._view.log_popup(log_string)
+        log("[Rabbit] subscribing to queues")
+        channel.basic_consume(queue='thermo-data', on_message_callback=self._thermo_callback, auto_ack=True)
+        channel.basic_consume(queue='sensor-data', on_message_callback=self._sensor_callback, auto_ack=True)
+
+        log(" [*] Waiting for messages. To exit press CTRL+C")
+        while self._running:
+            connection.process_data_events()
+            time.sleep(0.05)
+        
+        log("[Rabbit] Cleaning up")
+        connection.close()
+            
+    def request_stop(self):
+        self._running = False
 
 
 def main(args):
