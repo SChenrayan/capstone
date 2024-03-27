@@ -1,15 +1,18 @@
 import cv2 as cv
 import numpy as np
 import datetime
-
+from threading import Lock
+from util import log
 
 class SensorViewer:
     def __init__(self):
         self.window_name = "Jetson Sensor"
         self.img = np.zeros((720, 640, 3), dtype=np.uint8)
+        self.mutex = Lock()
         cv.namedWindow(self.window_name)
 
     def set_thermo_data(self, data):
+        log("in set thermo data")
         temps = np.array(data["temps"], dtype=np.uint8)
         colored_temps = cv.applyColorMap(temps, cv.COLORMAP_JET)
         colored_temps = cv.resize(colored_temps, (640, 480), interpolation=cv.INTER_CUBIC)
@@ -27,41 +30,27 @@ class SensorViewer:
                 cv.rectangle(colored_temps, (x, y), (x+w, y+h), (255, 0, 0), 2)
                 cv.putText(colored_temps, 'Hot!', (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
+        self.mutex.acquire()
         self.img[0:480, 0:640] = colored_temps
-        self.update_img()
+        self.mutex.release()
 
     def set_sensor_data(self, data):
-        self.img[480:720, 0:640] = 0
+        log("in set sensor data")
+        self.mutex.acquire()
+        self.img[550:720, 0:640] = 0
 
-        self.write(f"Humidity: {data['humidity']}", (10, 550))
-        self.write(f"Pressure: {data['pressure']}", (10, 600))
-        self.write(f"Altitude: {data['altitude']}", (10, 650))
+        self.write(f"Humidity: {data['humidity']}", (10, 580))
+        self.write(f"Pressure: {data['pressure']}", (10, 620))
+        self.write(f"Altitude: {data['altitude']}", (10, 660))
         self.write(f"Temperature: {data['temp']}", (10, 700))
-        self.update_img()
+        self.mutex.release()
 
     def log_popup(self, log_string):
-        cv.namedWindow("Logger")
-        log_img = np.zeros((200, 800, 3), dtype=np.uint8)
-        cv.putText(
-            log_img,
-            "[" + str(datetime.datetime.now()) + "] " + log_string,
-            (50, 50),
-            cv.FONT_HERSHEY_COMPLEX,
-            1,
-            (255, 255, 255),
-            1,
-            2
-        )
-        cv.imshow("Logger", log_img)
+        self.mutex.acquire()
+        self.img[480:550, 0:640] = 0
 
-        k = cv.waitKey(33)
-        if k == 27:    # Esc key to close log window
-            cv.destroyWindow("Logger")
-
-        # def close_logger(args):
-        #     cv.destroyWindow("Logger")
-
-        # cv.createButton(buttonName="Close", onChange=close_logger, userData=None, buttonType=cv.QT_PUSH_BUTTON,initialButtonState=1)
+        self.write(log_string, (10, 500))
+        self.mutex.release()
 
     def write(self, text, pos):
         font = cv.FONT_HERSHEY_SIMPLEX
@@ -80,8 +69,10 @@ class SensorViewer:
             lineType
         )
 
-    def update_img(self):
+    def show(self):
         cv.imshow(self.window_name, self.img)
         cv.waitKey(50)
 
+    def destroy(self):
+        cv.destroyWindow(self.window_name)
 
