@@ -7,12 +7,12 @@ from util import log
 class SensorViewer:
     def __init__(self):
         self.window_name = "Jetson Sensor"
+        # 
         self.img = np.zeros((720, 640, 3), dtype=np.uint8)
         self.mutex = Lock()
         cv.namedWindow(self.window_name)
 
     def set_thermo_data(self, data):
-        log("in set thermo data")
         temps = np.array(data["temps"], dtype=np.uint8)
         colored_temps = cv.applyColorMap(temps, cv.COLORMAP_JET)
         colored_temps = cv.resize(colored_temps, (640, 480), interpolation=cv.INTER_CUBIC)
@@ -35,9 +35,8 @@ class SensorViewer:
         self.mutex.release()
 
     def set_sensor_data(self, data):
-        log("in set sensor data")
         self.mutex.acquire()
-        self.img[550:720, 0:640] = 0
+        self.img[550:720, 0:640] = 255
 
         self.write(f"Humidity: {data['humidity']}", (10, 580))
         self.write(f"Pressure: {data['pressure']}", (10, 620))
@@ -45,17 +44,17 @@ class SensorViewer:
         self.write(f"Temperature: {data['temp']}", (10, 700))
         self.mutex.release()
 
-    def log_popup(self, log_string):
+    def write_popup(self, str):
         self.mutex.acquire()
-        self.img[480:550, 0:640] = 0
+        self.img[480:550, 0:640] = 255
 
-        self.write(log_string, (10, 500))
+        self.write(str, (10, 500))
         self.mutex.release()
 
     def write(self, text, pos):
         font = cv.FONT_HERSHEY_SIMPLEX
         fontScale = 1
-        fontColor = (255, 255, 255)
+        fontColor = (0, 0, 0)
         thickness = 1
         lineType = 2
         cv.putText(
