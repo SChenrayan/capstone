@@ -7,5 +7,8 @@ class Vertex:
     def __add__(self, other):
         return Vertex(self.x + other.x, self.y + other.y, self.z + other.z)
 
+    def as_tuple(self) -> tuple:
+        return self.x, self.y, self.z
+
     def as_line(self) -> str:
         return f"v {self.x} {self.y} {self.z}"

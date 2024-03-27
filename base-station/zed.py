@@ -1,6 +1,7 @@
 import datetime
 import math
 import time
+from typing import Tuple
 
 import pyzed.sl as sl
 import ogl_viewer.viewer as gl
@@ -53,6 +54,7 @@ class ZedCamera:
         self._markers = []
         self._warnings = []
         self._position = sl.Pose()
+        self._global_position = sl.Pose()
         self._image = sl.Mat()
         self._pymesh = sl.Mesh()
         self._last_call = time.time()
@@ -84,7 +86,8 @@ class ZedCamera:
             print("retrieving image")
             self._zed.retrieve_image(self._image, sl.VIEW.LEFT)
             log(f"-------------- Retrieved image")
-            tracking_state = self._zed.get_position(self._position)
+            self._zed.get_position(self._position)
+            tracking_state, global_vertex = self.get_global_position()
             log(f"-------------- Tracking state = {tracking_state}")
 
             if self._mapping_active:
@@ -100,25 +103,31 @@ class ZedCamera:
             else:
                 mapping_state = sl.SPATIAL_MAPPING_STATE.NOT_ENABLED
                 # print("")
-            self._viewer.update_view(self._image, self._position.pose_data(), tracking_state, mapping_state)
+            self._viewer.update_view(self._image, self._position.pose_data(), global_vertex.as_tuple(), tracking_state, mapping_state)
         else:
             log(f"Grabbing from ZED camera failed. ERROR CODE: {grab}")
         return True
+
+    def get_global_position(self) -> Tuple[Vertex, sl.POSITIONAL_TRACKING_STATE]:
+        state = self._zed.get_position(self._global_position, sl.REFERENCE_FRAME.WORLD)
+        if state == sl.POSITIONAL_TRACKING_STATE.OK:
+            translation = sl.Translation()
+            x = round(self._global_position.get_translation(translation).get()[0], 3)
+            y = round(self._global_position.get_translation(translation).get()[1], 3)
+            z = round(self._global_position.get_translation(translation).get()[2], 3)
+            return state, Vertex(x, y, z)
+        else:
+            return state, Vertex(0, 0, 0)
 
     def add_marker(self) -> str:
         if not self._mapping_active:
             msg = "Cannot place markers while not mapping"
             log(msg)
             return msg
-        global_position = sl.Pose()
-        state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.WORLD)
+        vertex, state = self.get_global_position()
         if state == sl.POSITIONAL_TRACKING_STATE.OK:
-            translation = sl.Translation()
-            x = round(global_position.get_translation(translation).get()[0], 3)
-            y = round(global_position.get_translation(translation).get()[1], 3)
-            z = round(global_position.get_translation(translation).get()[2], 3)
-            self._markers.append(Vertex(x, y, z))
-            msg = f"Marker added at position: {x}, {y}, {z}"
+            self._markers.append(vertex)
+            msg = f"Marker added at position: {vertex.x}, {vertex.y}, {vertex.z}"
             log(msg)
             return msg
         else:
@@ -132,30 +141,23 @@ class ZedCamera:
             log(msg)
             return msg
         point_cloud = sl.Mat()
-        global_position = sl.Pose()
         self._zed.retrieve_measure(point_cloud, sl.MEASURE.DEPTH)
-        state = self._zed.get_position(global_position, sl.REFERENCE_FRAME.WORLD)
+        vertex, state = self.get_global_position()
+        depth = point_cloud.get_value(self._zed.get_resolution().width / 2, self._zed.get_resolution().height / 2)[1]
 
-        depth = point_cloud.get_value(640, 360)[1]
         if state == sl.POSITIONAL_TRACKING_STATE.OK:
-            translation = sl.Translation()
-            x = round(global_position.get_translation(translation).get()[0], 3)
-            y = round(global_position.get_translation(translation).get()[1], 3)
-            z = round(global_position.get_translation(translation).get()[2], 3)
-
-            rotation = global_position.get_rotation_vector()
+            rotation = self._global_position.get_rotation_vector()
             pitch, yaw = round(rotation[0], 3), round(rotation[1], 3)
             ground_proj = depth * math.cos(pitch) - 0.25  # Move marker closer to avoid clipping
             dx = -1 * math.sin(yaw) * ground_proj
             dy = depth * math.sin(pitch)
             dz = -1 * math.cos(yaw) * ground_proj
 
-            x += dx
-            y += dy
-            z += dz
+            displacement_vertex = Vertex(dx, dy, dz)
+            warning_vertex = vertex + displacement_vertex
 
-            self._warnings.append(Vertex(x, y, z))
-            msg = f"Marker added at position: {x}, {y}, {z}"
+            self._warnings.append(warning_vertex)
+            msg = f"Marker added at position: {warning_vertex.x}, {warning_vertex.y}, {warning_vertex.z}"
             log(msg)
             return msg
         else:
