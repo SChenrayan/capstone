@@ -214,6 +214,7 @@ class GLViewer:
         self.image_handler = ImageHandler()
         self.sub_maps = []
         self.pose = sl.Transform().set_identity()
+        self.global_pose_tuple = (0, 0, 0)
         self.tracking_state = sl.POSITIONAL_TRACKING_STATE.OFF
         self.mapping_state = sl.SPATIAL_MAPPING_STATE.NOT_ENABLED
 
@@ -321,12 +322,13 @@ class GLViewer:
         self.ask_clear = True
         self.new_chunks = True
 
-    def update_view(self, _image, _pose, _tracking_state, _mapping_state):
+    def update_view(self, _image, _pose, _global_pose_tuple, _tracking_state, _mapping_state):
         self.mutex.acquire()
         if self.available:
             # update image
             self.image_handler.push_new_image(_image)
             self.pose = _pose
+            self.global_pose_tuple = _global_pose_tuple
             self.tracking_state = _tracking_state
             self.mapping_state = _mapping_state
         self.mutex.release()
@@ -337,7 +339,7 @@ class GLViewer:
     # TODO: this is hacky can we do this better
     def lock(self):
         self.mutex.acquire()
-    
+
     def unlock(self):
         self.mutex.release()
 
@@ -455,6 +457,8 @@ class GLViewer:
                     glColor3f(0.55, 0.65, 0.55)
                     state_str = spatial_mapping_state_str + str(sl.SPATIAL_MAPPING_STATE.NOT_ENABLED)
             self.print_GL(-0.99, 0.83, state_str)
+            self.print_GL(-0.99, 0.76, str(self.global_pose_tuple))
+
 
 class SubMapObj:
     def __init__(self):
