@@ -1,8 +1,8 @@
 import time
 import pika
 import json
-from thermo_sensor import ThermoSensor
-from humidity_sensor import HumiditySensor
+import thermo_sensor as ts
+import humidity_sensor as hs
 import argparse
 
 parser = argparse.ArgumentParser(
@@ -13,19 +13,20 @@ parser.add_argument('--sleep_rate', default=0.1, required=False)
 
 
 def main(args):
+    sleep_rate = float(args.sleep_rate)
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
 
     channel.queue_declare(queue='sensor-data')
     channel.queue_declare(queue='thermo-data')
 
-    thermo_sensor = ThermoSensor()
-    humidity_sensor = HumiditySensor()
+    thermo_sensor = ts.ThermoSensor()
+    humidity_sensor = hs.HumiditySensor()
 
     while True:
         channel.basic_publish(exchange='', routing_key='sensor-data', body=json.dumps(humidity_sensor.data()))
         channel.basic_publish(exchange='', routing_key='thermo-data', body=json.dumps(thermo_sensor.data()))
-        time.sleep(args.sleep_rate)
+        time.sleep(sleep_rate)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,5 @@
+import argparse
+
 from evdev import UInput, ecodes as e, InputDevice, list_devices, AbsInfo, util
 import pika
 import json
@@ -31,42 +33,63 @@ CAP = {
     ],
 }
 
-virtual_joystick = UInput(CAP, name='Virtual Racecar Joystick')
+parser = argparse.ArgumentParser(
+    prog='joystick_receiver.py',
+    description='Receives joy data from base station and writes to virtual input'
+)
+parser.add_argument('ip')
+parser.add_argument('--port', default=5672, required=False)
 
-creds = pika.PlainCredentials("joystick-rabbit", 'joystick-rabbit')
-connection = pika.BlockingConnection(pika.ConnectionParameters('10.110.120.227', 5672, "/", creds))
-channel = connection.channel()
 
-channel.queue_declare(queue='joy_state')
+class JoystickReceiver:
+    def __init__(self, args):
+        self._virtual_joystick = UInput(CAP, name='Virtual Racecar Joystick')
+        self._running = False
 
+        self._creds = pika.PlainCredentials("joystick-rabbit", 'joystick-rabbit')
+        self._connection = pika.BlockingConnection(pika.ConnectionParameters(args.ip, args.port, "/", self._creds))
+        self._channel = self._connection.channel()
 
-def callback(ch, method, properties, body):
-    print(f"Body: {body}")
-    body = json.loads(body)
-    state = {
-        e.EV_ABS: {
-            0: body["axes"]["x_left"],
-            1: body["axes"]["y_left"],
-            3: body["axes"]["x_right"],
-            4: body["axes"]["y_right"],
-        },
-        e.EV_KEY: {
-            310: body["buttons"]["bumper_left"],
-        },
-    }
+        self._channel.queue_declare(queue='joy_state')
+        self._channel.basic_consume(queue='joy_state', on_message_callback=self._callback, auto_ack=True)
 
-    for category in state.keys():
-        for event in state[category].keys():
+    def start(self):
+        self._running = True
+        print("consuming")
+        while self._running:
             try:
-                value = state[category][event]
-                virtual_joystick.write(category, event, value)
-            except KeyError:
-                pass
-    virtual_joystick.syn()
+                self._connection.process_data_events()
+            except KeyboardInterrupt:
+                break
+        self._connection.close()
+        print("closed")
+
+    def callback(self, ch, method, properties, body):
+        print(f"Body: {body}")
+        body = json.loads(body)
+        state = {
+            e.EV_ABS: {
+                0: body["axes"]["x_left"],
+                1: body["axes"]["y_left"],
+                3: body["axes"]["x_right"],
+                4: body["axes"]["y_right"],
+            },
+            e.EV_KEY: {
+                310: body["buttons"]["bumper_left"],
+            },
+        }
+
+        for category in state.keys():
+            for event in state[category].keys():
+                try:
+                    value = state[category][event]
+                    self._virtual_joystick.write(category, event, value)
+                except KeyError:
+                    pass
+        self._virtual_joystick.syn()
 
 
-channel.basic_consume(queue='joy_state', on_message_callback=callback, auto_ack=True)
-
-print("consuming")
-channel.start_consuming()
-print("after consuming")
+if __name__ == "__main__":
+    args = parser.parse_args()
+    receiver = JoystickReceiver(args)
+    receiver.start()
