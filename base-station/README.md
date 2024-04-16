@@ -1,9 +1,11 @@
 # Base Station
 
 # Basic Info
-This can be any laptop, as long as it is compatible with the ZED SDK and NVIDIA CUDA (the latter is more of a limiting factor usually). RabbitMQ is required to send and receive data between the jetson. 
-A joystick (in our case the Logitech F710) is required. We used the inputs library to capture input events from the joystick
-For 2 way audio, just install the Mumble client online and connect to the jetson using its IP address.
+- This can be any laptop, as long as it is compatible with the ZED SDK and NVIDIA CUDA (the latter is more of a limiting factor usually). 
+- RabbitMQ is required to send and receive data between the jetson. 
+- A joystick (in our case the Logitech F710) is required.
+- We used the inputs library to capture input events from the joystick
+- For 2 way audio, just install the Mumble client online and connect to the jetson using its IP address.
 
 # How to Run
 TL;DR: Run `main.py ip` where ip is the IP Address of the jetson.
