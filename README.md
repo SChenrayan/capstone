@@ -22,3 +22,6 @@ There are two main parts to the system. The base station's functionality is all 
 - Adafruit BME280
 - RabbitMQ
 - ROS (to control your VESC/motors)
+
+# Questions?
+Email `eriksson.a@northeastern.edu` or `chenrayan.s@northeastern.edu` if you have any questions or something isn't working.
