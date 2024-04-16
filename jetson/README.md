@@ -1,9 +1,9 @@
 # Jetson Rover
 
 # Basic Info
-The rover is a Jetson TX2 running Ubuntu 18.04
-The password and sudo password are `jetson`
-If you are running into issues connecting to the internet because of date mismatches: Go to settings, change it to manually set the date to today's date, then switch back to automatic.
+- The rover is a Jetson TX2 running Ubuntu 18.04
+- The password and sudo password are `jetson`
+- If you are running into issues connecting to the internet because of date mismatches: Go to settings, change it to manually set the date to today's date, then switch back to automatic.
 
 # How to Run
 ## ZED Streaming
