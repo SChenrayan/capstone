@@ -21,3 +21,6 @@ Currently the joystick will default to a virtual joystick created in `joystick_r
 
 ## Joystick Receiver
 `joystick_receiver.py` will receive joystick events from the base station and write them to a virtual input on the jetson. This virtual input is used as the joystick by ROS. To ensure it is able to edit the virtual input, run `sudo joystick_receiver.py ip` where ip is the IP address of the base station. If receiving any AMQPConnection issues, go through the same steps as above but opposite since the base station is hosting the queue.
+
+## Two-Way Audio
+To start the server, run `murmurd` in the terminal. Then both devices can connect using the jetson's IP (and the password can be configured in the .ini file).
